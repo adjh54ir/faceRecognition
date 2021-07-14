@@ -7,6 +7,7 @@ import Routers from './router/Routers';
 import { Switch } from 'react-router-dom';
 import React from 'react';
 import TensorFlowComponent from './tensorflow/TensorFlowComponent';
+import TensorFlowWaterfallComponent from './tensorflow/TensorFlowWaterfallComponent';
 
 class App extends React.Component {
 
@@ -19,6 +20,9 @@ class App extends React.Component {
 
       {/* TensorFlow ProtoType */}
       {/* <TensorFlowComponent></TensorFlowComponent> */}
+
+      {/* TensorFlow Waterfall Demo ProtoType */}
+      {/* <TensorFlowWaterfallComponent></TensorFlowWaterfallComponent> */}
 
       {/* MediaPipe ProtoType */}
       <MediaPipeComponent></MediaPipeComponent>
