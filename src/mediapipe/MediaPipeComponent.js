@@ -15,20 +15,52 @@ export const MediaPipeComponent = () => {
     const { Camera, SelfieSegmentation, FaceMesh, drawConnectors, controls } = window;
     const { FACEMESH_TESSELATION, FACEMESH_RIGHT_EYE, FACEMESH_RIGHT_EYEBROW, FACEMESH_LEFT_EYE, FACEMESH_LEFT_EYEBROW, FACEMESH_FACE_OVAL, FACEMESH_LIPS } = window;
 
-    // let cameraArr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-    let cameraArr = [1, 2, 3, 4, 5, 6, 7, 8];
-
     const canvasWidth = 600;
-    const canvasHeight = 400;
+    const canvasHeight = 500;
 
     const videoRefence = useRef(null);
     const canvasReference = useRef(null);
+
+    const [canvasList, setCanvasList] = useState(null);
 
     /**
      * [init] 화면 렌더링 이후 수행
      */
     useEffect(() => {
+        _fn_initCavasSetting();
     }, []);
+
+
+
+    /**
+     * Vidio 출력개수 세팅
+     */
+    const _fn_initCavasSetting = async() =>{
+
+        let canvasListArr = [];
+
+        let canvasCnt = 15
+
+        for(let i = 0 ; i < canvasCnt ; i++){
+
+            canvasListArr.push(
+
+                <>
+                
+                <td>
+                    <canvas
+                        ref={canvasReference}
+                        width={canvasWidth+"px"}
+                        height={canvasHeight+"px"} />
+                </td>
+                </>
+            );
+        }
+
+        setCanvasList(canvasListArr);
+
+    }
+
 
     const _fn_totalSetSelfiCam = async () => {
         await _fn_initSetSelfiCam();
@@ -47,8 +79,15 @@ export const MediaPipeComponent = () => {
                 return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${file}`;
             }
         });
+
+
+        /**
+         * modelSelection [0] : 지정되지 않은 값
+         * modelSelection [1] : 가로형 모델을 사용
+         */
+
         await selfieSegmentation.setOptions({
-            modelSelection: 1,
+            modelSelection: 0,
         });
 
 
@@ -86,29 +125,28 @@ export const MediaPipeComponent = () => {
      * destination-atop : 대상 그림과 겹쳐진 부분만, 즉 나중에 그려진 도형 영역만 표시 -> 겹쳐진 부분은 처음 그려진 도형이 표시
      */
     const _fn_selfiSegOnResults = async (results) => {
-        console.log("error point1");
         const canvasTag = document.getElementsByTagName('canvas');
 
         for (let canvasItem of canvasTag) {
-            console.log("error point2");
 
             let ctx = canvasItem.getContext('2d');
             // let ctx = canvasItem.getContext('webgl2')
+            console.log(ctx);
 
 
             ctx.save();
-            ctx.clearRect(0, 0, canvasWidth, canvasWidth);
+            ctx.clearRect(0, 0, canvasItem.width, canvasItem.height);
 
-            ctx.drawImage(results.segmentationMask, 0, 0, canvasWidth, canvasWidth);
+            ctx.drawImage(results.segmentationMask, 0, 0, canvasItem.width, canvasItem.height);
 
             ctx.globalCompositeOperation = 'source-out';
             // canvasChg.filter = "blur(5px)";
             ctx.shadowBlur = 15;
             ctx.fillStyle = '#00FF00';
-            ctx.fillRect(0, 0, canvasWidth, canvasWidth);
+            ctx.fillRect(0, 0, canvasItem.width, canvasItem.height);
 
             ctx.globalCompositeOperation = 'destination-atop';
-            ctx.drawImage(results.image, 0, 0, canvasWidth, canvasWidth);
+            ctx.drawImage(results.image, 0, 0, canvasItem.width, canvasItem.height);
 
             ctx.restore();
         }
@@ -133,6 +171,13 @@ export const MediaPipeComponent = () => {
                 return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
             }
         });
+
+
+        /**
+         * maxNumFaces: 감지할 최대 얼굴 수(default: 1)
+         * minDetectionConfidence: 탐지에 성공한 것으로 간주되는 얼굴 탐지 모델의 최소 신뢰 값(default: 0.5)
+         * minTrackingConfidence: 얼굴 랜드마크가 성공적으로 추적된 것으로 간주되는 랜드마크 추적 모델의 최소 신뢰 값(default: 0.5)
+         */
         faceMesh.setOptions({
             maxNumFaces: 1,
             minDetectionConfidence: 0.5,
@@ -143,7 +188,7 @@ export const MediaPipeComponent = () => {
         for (const videoItem of videoTag) {
 
             // 비디오 안보이게 하기 
-            // videoItem.style.display = "none";
+            videoItem.style.display = "none";
             let camera = await new Camera(videoItem, {
                 onFrame: async () => {
                     await faceMesh.send({ image: videoRefence.current });
@@ -167,9 +212,9 @@ export const MediaPipeComponent = () => {
             let canvasCtx = canvasItem.getContext('2d');
 
             canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+            canvasCtx.clearRect(0, 0, canvasItem.width, canvasItem.height);
             canvasCtx.drawImage(
-                results.image, 0, 0, canvasWidth, canvasHeight);
+                results.image, 0, 0, canvasItem.width, canvasItem.height);
             if (results.multiFaceLandmarks) {
                 for (const landmarks of results.multiFaceLandmarks) {
                     drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
@@ -195,46 +240,29 @@ export const MediaPipeComponent = () => {
 
                 <button
                     type="button"
-                    onClick={() => _fn_totalSetSelfiCam()}> SelfieSegmentation Button</button>
+                    onClick={() => _fn_totalSetSelfiCam()}>화면 뒷배경 변환 버튼</button>
                 <button
                     type="button"
                     onClick={() => _fn_initSetFaceMesh()}>얼굴인식 버튼</button>
 
+                <br/>
+                <br/>
                 <table>
-                    {
-                        cameraArr.map((item) => {
-                            return (
-                                <>
-                                    <tr id={item}>
-                                        <td>
-                                            Video{item}
-                                        </td>
-                                        <td>
-                                            Canvas{item}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <video
-                                                ref={videoRefence}
-                                            />
-                                        </td>
-                                        <td>
-                                            <canvas
-                                                ref={canvasReference}
-                                                width={canvasWidth}
-                                                height={canvasHeight} />
-                                        </td>
-                                    </tr>
-                                </>
-                            )
-                        })
-                    }
-
-
-
+                    
+                    <tr>
+                        <td colSpan={canvasList === null ? 1 : canvasList.length}>
+                            Canvas
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <video
+                                ref={videoRefence}
+                            />
+                        </td>
+                        {canvasList}
+                    </tr>
                 </table>
-
             </div>
 
         </>

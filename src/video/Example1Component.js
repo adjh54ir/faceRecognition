@@ -17,7 +17,7 @@ export const Example1Component = (props) => {
         multiplier: 0.75,
         quantBytes: 4
     };
-
+ 
     // An object to configure parameters for detection. I have raised
     // the segmentation threshold to 90% confidence to reduce the
     // number of false positives.
