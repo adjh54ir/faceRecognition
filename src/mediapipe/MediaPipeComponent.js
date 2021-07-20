@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from "react";
-
+import waterfall from '../images/waterfall.jpg'
 // import { FaceMesh } from "@mediapipe/face_mesh";
 // import { SelfieSegmentation } from "@mediapipe/selfie_segmentation";
 
@@ -19,7 +19,9 @@ export const MediaPipeComponent = () => {
     const canvasHeight = 500;
 
     const videoRefence = useRef(null);
+    
     const canvasReference = useRef(null);
+    const imgReference = useRef(null);
 
     const [canvasList, setCanvasList] = useState(null);
 
@@ -27,7 +29,7 @@ export const MediaPipeComponent = () => {
      * [init] 화면 렌더링 이후 수행
      */
     useEffect(() => {
-        _fn_initCavasSetting();
+        _fn_initCavasSetting();     // 캔버스 생성 세팅
     }, []);
 
 
@@ -39,21 +41,19 @@ export const MediaPipeComponent = () => {
 
         let canvasListArr = [];
 
-        let canvasCnt = 15
+        // 캔버스 생성 개수 
+        let canvasCnt = 1;
 
         for(let i = 0 ; i < canvasCnt ; i++){
 
             canvasListArr.push(
-
-                <>
-                
                 <td>
+                    <h3>{i+1}번 Canvas</h3>
                     <canvas
                         ref={canvasReference}
                         width={canvasWidth+"px"}
                         height={canvasHeight+"px"} />
                 </td>
-                </>
             );
         }
 
@@ -80,7 +80,6 @@ export const MediaPipeComponent = () => {
             }
         });
 
-
         /**
          * modelSelection [0] : 지정되지 않은 값
          * modelSelection [1] : 가로형 모델을 사용
@@ -89,8 +88,6 @@ export const MediaPipeComponent = () => {
         await selfieSegmentation.setOptions({
             modelSelection: 0,
         });
-
-
 
         for (const videoItem of videoTag) {
 
@@ -125,30 +122,48 @@ export const MediaPipeComponent = () => {
      * destination-atop : 대상 그림과 겹쳐진 부분만, 즉 나중에 그려진 도형 영역만 표시 -> 겹쳐진 부분은 처음 그려진 도형이 표시
      */
     const _fn_selfiSegOnResults = async (results) => {
+        console.log("canvas");
         const canvasTag = document.getElementsByTagName('canvas');
 
         for (let canvasItem of canvasTag) {
 
-            let ctx = canvasItem.getContext('2d');
-            // let ctx = canvasItem.getContext('webgl2')
-            console.log(ctx);
 
+             /**
+              * [option1]
+              * fillRect: 직사각형을 그림
+              * strokeRect: 직사각형의 윤곽선을 그림
+              * clearRect: 특정 부분을 지우는 직사각형
+              * 
+              * [option2]
+              * fillStyle = color: 도형을 채우는 색을 설정
+              * strokeStyle = color: 도형의 윤곽선 색을 설정
+              */
 
-            ctx.save();
-            ctx.clearRect(0, 0, canvasItem.width, canvasItem.height);
+            if( canvasItem.getContext){
+                console.log(results);
+                let ctx = canvasItem.getContext('2d');
 
-            ctx.drawImage(results.segmentationMask, 0, 0, canvasItem.width, canvasItem.height);
+                ctx.save();
+                // STEP1: 신체 분리 수행
+                ctx.clearRect(0, 0, canvasItem.width, canvasItem.height);
+                ctx.globalCompositeOperation = 'source-out';
+                ctx.drawImage(results.segmentationMask, 0, 0, canvasItem.width, canvasItem.height);     //results.segmentationMask 에 위에 사항을 그려줌
+                
+                
+                // ctx.filter = "blur(5px)";
+                ctx.globalAlpha  = 1.0
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvasItem.width, canvasItem.height);
+                ctx.globalCompositeOperation = 'destination-atop';
+                ctx.drawImage(results.image, 0, 0, canvasItem.width, canvasItem.height);
 
-            ctx.globalCompositeOperation = 'source-out';
-            // canvasChg.filter = "blur(5px)";
-            ctx.shadowBlur = 15;
-            ctx.fillStyle = '#00FF00';
-            ctx.fillRect(0, 0, canvasItem.width, canvasItem.height);
+                ctx.restore();
+            } else {
+                 // canvas unsupported code here
 
-            ctx.globalCompositeOperation = 'destination-atop';
-            ctx.drawImage(results.image, 0, 0, canvasItem.width, canvasItem.height);
-
-            ctx.restore();
+                alert("사용 불능");
+            }
+            
         }
 
 
@@ -248,7 +263,7 @@ export const MediaPipeComponent = () => {
                 <br/>
                 <br/>
                 <table>
-                    
+                    <img src={waterfall} alt="daekyo" style={{display:"none"}} ref={imgReference} />
                     <tr>
                         <td colSpan={canvasList === null ? 1 : canvasList.length}>
                             Canvas
